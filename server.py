@@ -30,9 +30,9 @@ class TwitterScrapeRequest(BaseModel):
 @app.post("/twitter/scrape")
 def scrape_twitter(request: TwitterScrapeRequest):
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    outfile = f"data_twitter_{request.query}_{timestamp}.csv"
+    outfile = f"data_twitter_{request.query.replace(' ', '-')}_{timestamp}.csv"
 
-    logger.info(f"{datetime} - Starting scraping {outfile}")
+    logger.info(f"{outfile}: {datetime.now()} - Starting scraping {outfile}")
     start_time = time.time()
     scrape_request: TwitterScrapeRequestModel = TwitterScrapeRequestModel(
         query=request.query,
@@ -43,7 +43,7 @@ def scrape_twitter(request: TwitterScrapeRequest):
     # This should be a background task
     scraper.execute()
 
-    logger.info(f"{datetime.now()} - Scraping completed in {time.time() - start_time} seconds. {outfile}")
+    logger.info(f"{outfile}: {datetime.now()} - Scraping completed in {time.time() - start_time} seconds. {outfile}")
 
     return {"data": "Scraping completed ${outfile}"}
 
