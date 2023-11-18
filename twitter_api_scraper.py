@@ -4,6 +4,10 @@ import json
 import logging
 from pydantic import BaseModel
 
+from app.sdk.models import LFN, BaseJobState, DataSource, Protocol
+
+from app.twitter_scraper_impl import TwitterScraperJob
+
 logger = logging.getLogger(__name__)
 
 class TwitterScrapeRequestModel(BaseModel):
