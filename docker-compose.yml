@@ -1,0 +1,18 @@
+version: "3"
+services:
+    minio:
+        image: quay.io/minio/minio:latest
+        container_name: minio
+        restart: always
+        ports:
+            - "9000:9000"
+            - "9090:9090"
+        environment:
+            MINIO_ACCESS_KEY: minio
+            MINIO_SECRET_KEY: minio123
+        command: server /data --console-address ":9090"
+        # healthcheck:
+        #   test: ["CMD", "mc", "ready", "local"]
+        #   interval: 5s
+        #   timeout: 5s
+        #   retries: 5

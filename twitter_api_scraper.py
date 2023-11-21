@@ -7,6 +7,10 @@ from pydantic import BaseModel
 from app.sdk.models import LFN, BaseJobState, DataSource, Protocol
 
 from app.twitter_scraper_impl import TwitterScraperJob
+from app.sdk.kernel_plackster_gateway import KernelPlancksterGateway  # type: ignore
+from app.sdk.minio_gateway import MinIORepository
+from app.sdk.models import LFN, BaseJob, BaseJobState, DataSource, Protocol
+
 
 logger = logging.getLogger(__name__)
 
