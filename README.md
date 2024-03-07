@@ -11,6 +11,7 @@ cp .env.template .env
 - API_KEY={YOUR TWITTER API KEY}
 - HOST={THE HOSTNAME OF THE}
 - PORT={THE PORT OF THE FASTAPI APP}
+- OPENAI_API_KEY={YOUR OPENAI API KEY}
 
 ### Run the container
 ```bash
