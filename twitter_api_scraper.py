@@ -7,7 +7,6 @@ from app.setup import setup
 from app.setup_scraping_client import get_scraping_client
 
 
-
 def main(
     job_id: int,
     query: str,
@@ -15,7 +14,7 @@ def main(
     start_date: str,
     end_date: str,
     api_key: str,
-    work_dir:str,
+    work_dir: str,
     log_level: str = "WARNING",
 ) -> None:
 
@@ -23,9 +22,12 @@ def main(
     logging.basicConfig(level=log_level)
 
     if not all([job_id, query, tracer_id, start_date, end_date, api_key]):
-        logger.error(f"{job_id}: job_id, tracer_id, start_date, end_date, scraperapi api_key, openai api_key, and query must all be set.")
-        raise ValueError("job_id, tracer_id, start_date, end_date, api_key and query must all be set.")
-
+        logger.error(
+            f"{job_id}: job_id, tracer_id, start_date, end_date, scraperapi api_key, openai api_key, and query must all be set."
+        )
+        raise ValueError(
+            "job_id, tracer_id, start_date, end_date, api_key and query must all be set."
+        )
 
     kernel_planckster, protocol, file_repository = setup(
         job_id=job_id,
@@ -38,26 +40,23 @@ def main(
         file_repository=file_repository,
     )
 
-    #TODO: redundent
+    # TODO: redundent
     twitter_client = get_scraping_client(
         job_id=job_id,
         logger=logger,
     )
 
-
-    
     scrape(
         job_id=job_id,
         tracer_id=tracer_id,
         query=query,
-        start_date= start_date,
-        end_date= end_date,
+        start_date=start_date,
+        end_date=end_date,
         api_key=api_key,
         scraped_data_repository=scraped_data_repository,
         work_dir=work_dir,
         log_level=log_level,
     )
-    
 
 
 if __name__ == "__main__":
@@ -124,7 +123,6 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-
     main(
         job_id=args.job_id,
         query=args.query,
@@ -135,4 +133,3 @@ if __name__ == "__main__":
         work_dir=args.work_dir,
         api_key=args.api_key,
     )
-
