@@ -1,8 +1,6 @@
-
 from logging import Logger
 import os
 from typing import Tuple
-
 from dotenv import load_dotenv
 from app.sdk.file_repository import FileRepository
 from app.sdk.kernel_plackster_gateway import KernelPlancksterGateway
