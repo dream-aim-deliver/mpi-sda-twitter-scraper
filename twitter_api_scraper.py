@@ -1,61 +1,135 @@
-import requests
-import pandas as pd
-import json
 import logging
-from pydantic import BaseModel
-
-logger = logging.getLogger(__name__)
-
-class TwitterScrapeRequestModel(BaseModel):
-    query: str
-    outfile: str
-    api_key: str
+from app.scraper import scrape
+from app.sdk.models import KernelPlancksterSourceData, BaseJobState
+from app.sdk.scraped_data_repository import ScrapedDataRepository
+from app.setup import setup
 
 
-class TwitterAPIScraper:
-    def __init__(self, config: TwitterScrapeRequestModel ) -> None:
-        self.query = config.query
-        self.outfile = config.outfile
-        self.api_key = config.api_key
-        self.logger = logger
+from app.setup_scraping_client import get_scraping_client
 
-    def execute(self):
-        try:
-            payload = {
-                'api_key': self.api_key,
-                'query': 'wildfire',
-                'num': '100',
-                'date_range_start': '2023-08-20',
-                'date_range_end': '2023-09-20'
-            }
-            response = requests.get('https://api.scraperapi.com/structured/twitter/search', params=payload)
 
-            data = json.loads(response.text)
 
-            output = json.dumps(data, indent=4)
+def main(
+    job_id: int,
+    query: str,
+    tracer_id: str,
+    start_date: str,
+    end_date: str,
+    api_key: str,
+    log_level: str = "WARNING",
+) -> None:
 
-        except Exception as e:
-            self.logger.error("API expired or account reached its maximum request limit")
+    logger = logging.getLogger(__name__)
+    logging.basicConfig(level=log_level)
 
-        self.logger.info(output)
+    if not all([job_id, query, tracer_id, start_date, end_date, api_key]):
+        logger.error(f"{job_id}: job_id, tracer_id, start_date, end_date, api_key and query must all be set.")
+        raise ValueError("job_id, tracer_id, start_date, end_date, api_key and query must all be set.")
 
-        data = json.loads(response.text)
 
-        tweets = data['organic_results']
+    kernel_planckster, protocol, file_repository = setup(
+        job_id=job_id,
+        logger=logger,
+    )
 
-        for tweet in tweets:
-            self.logger.info(tweet['title'])
-            self.logger.info(tweet['snippet'])
-            self.logger.info(tweet['link'])
+    scraped_data_repository = ScrapedDataRepository(
+        protocol=protocol,
+        kernel_planckster=kernel_planckster,
+        file_repository=file_repository,
+    )
 
-        twitter_data = []
-        for tweet in tweets:
-            twitter_data.append({
-                'Title': tweet["title"],
-                'Tweet': tweet["snippet"],
-                'URL': tweet["link"]
-            })
+    twitter_client = get_scraping_client(
+        job_id=job_id,
+        logger=logger,
+    )
 
-        df = pd.DataFrame(twitter_data)
-        df.to_json(f"{self.outfile}.json", orient='index')
-        print('Export Successful')
+
+    import asyncio
+
+    loop = asyncio.get_event_loop()
+
+    loop.run_until_complete(
+        scrape(
+            job_id=job_id,
+            query=query,
+            tracer_id=tracer_id,
+            start_date= start_date,
+            end_date= end_date,
+            api_key=api_key,
+            scraped_data_repository=scraped_data_repository,
+            twitter_client=twitter_client,
+            log_level=log_level,
+        )
+    )
+
+    loop.close()
+
+
+if __name__ == "__main__":
+
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Scrape data from twitter.")
+
+    parser.add_argument(
+        "--job-id",
+        type=str,
+        default="1",
+        help="The job id",
+    )
+
+    parser.add_argument(
+        "--query",
+        type=str,
+        default="Wildfire",
+        help="Search Query",
+    )
+
+    parser.add_argument(
+        "--tracer-id",
+        type=str,
+        default="1",
+        help="The tracer id",
+    )
+
+    parser.add_argument(
+        "--log-level",
+        type=str,
+        default="WARNING",
+        help="The log level to use when running the scraper. Possible values are DEBUG, INFO, WARNING, ERROR, CRITICAL. Set to WARNING by default.",
+    )
+
+    parser.add_argument(
+        "--start_date",
+        type=str,
+        default="2024-03-10",
+        help="The start date",
+    )
+
+    parser.add_argument(
+        "--end_date",
+        type=str,
+        default="2024-03-15",
+        help="The end date",
+    )
+
+    parser.add_argument(
+        "--api_key",
+        type=str,
+        default="No Default Value possible",
+        help="Scrape API key",
+    )
+
+    args = parser.parse_args()
+
+
+    main(
+        job_id=args.job_id,
+        query=args.query,
+        tracer_id=args.tracer_id,
+        log_level=args.log_level,
+        start_date=args.start_date,
+        end_date=args.end_date,
+        api_key=args.api_key,
+    )
+
