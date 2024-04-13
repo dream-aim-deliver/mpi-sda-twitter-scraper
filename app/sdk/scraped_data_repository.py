@@ -86,3 +86,33 @@ class ScrapedDataRepository:
                 )
 
         return source_data
+    
+
+    def register_scraped_json(self, source_data: KernelPlancksterSourceData, job_id: int, local_file_name: str) -> KernelPlancksterSourceData:
+
+        match self.protocol:
+
+            case ProtocolEnum.S3:
+
+                signed_url = self.kernel_planckster.generate_signed_url(source_data=source_data) 
+                
+                self.logger.info(f"{job_id}: Uploading json to object store")
+
+                self.file_repository.public_upload(signed_url, local_file_name)
+                
+                self.logger.info(
+                f"{job_id}: Uploaded json to {signed_url}"
+                )
+
+                self.kernel_planckster.register_new_source_data(source_data=source_data)
+
+            case ProtocolEnum.LOCAL:
+                # If local, then we don't use kernel planckster at all
+                # NOTE: local is deprecated
+                self.file_repository.save_file_locally(
+                file_to_save=local_file_name,
+                source_data=source_data,
+                file_type="json",
+                )
+
+        return source_data

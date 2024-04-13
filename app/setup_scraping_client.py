@@ -1,8 +1,7 @@
 import os
 from logging import Logger
 
-def get_scraping_client(job_id: int,
-    logger: Logger):
+def get_scraping_client(job_id: int,logger: Logger):
 
     try:
          logger.info(f"{job_id}: Setting up Twitter client.")
