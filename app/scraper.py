@@ -114,7 +114,7 @@ def scrape(
                     scraped_data_repository.register_scraped_json(current_data, job_id, lfp )
                     
                     last_successful_data = current_data
-                elif page >= 2:
+                else:
                     logger.error(f"{job_id}: Error: {response.status_code} - {response.text}")
                     logger.info("No more tweets found for this query. Scraping completed.")
                 
