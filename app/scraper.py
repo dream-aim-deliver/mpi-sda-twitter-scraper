@@ -48,10 +48,11 @@ def scrape(
     query: str,
     start_date: str,
     end_date: str,
-    api_key: str,
     scraped_data_repository: ScrapedDataRepository,
     work_dir: str,
     log_level: Logger,
+    scraper_api_key: str,
+    openai_api_key: str
 ) -> JobOutput:
     try:
         logger = logging.getLogger(__name__)
@@ -67,7 +68,7 @@ def scrape(
 
         filter = "forest wildfire"
         # Enables `response_model`
-        client = instructor.from_openai(OpenAI())
+        client = instructor.from_openai(OpenAI(api_key=openai_api_key))
 
         logger.info(f"{job_id}: Starting Job")
         job_state = BaseJobState.RUNNING
@@ -77,7 +78,7 @@ def scrape(
         tweet_count = 0
         while True:
             payload = {
-                'api_key': api_key,
+                'api_key': scraper_api_key,
                 'query': query,
                 'date_range_start': start_date,
                 'date_range_end': end_date,

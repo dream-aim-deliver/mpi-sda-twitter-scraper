@@ -10,21 +10,16 @@ from app.sdk.models import ProtocolEnum
 def _setup_kernel_planckster(
     job_id: int,
     logger: Logger,
+    kernel_planckster_host: str,
+    kernel_planckster_port: int,
+    kernel_planckster_auth_token: str,
+    kernel_planckster_scheme: str,
 ) -> KernelPlancksterGateway:
 
     try:
 
         logger.info(f"{job_id}: Setting up Kernel Planckster Gateway.")
-        # Check environment variables for the Kernel Planckster Gateway
-        kernel_planckster_host = os.getenv("KERNEL_PLANCKSTER_HOST")
-        kernel_planckster_port = os.getenv("KERNEL_PLANCKSTER_PORT")
-        kernel_planckster_auth_token = os.getenv("KERNEL_PLANCKSTER_AUTH_TOKEN")
-        kernel_planckster_scheme = os.getenv("KERNEL_PLANCKSTER_SCHEME")
-
-        if not all([kernel_planckster_host, kernel_planckster_port, kernel_planckster_auth_token, kernel_planckster_scheme]):
-            logger.error(f"{job_id}: KERNEL_PLANCKSTER_HOST, KERNEL_PLANCKSTER_PORT, KERNEL_PLANCKSTER_AUTH_TOKEN and KERNEL_PLANCKSTER_SCHEME must be set.")
-            raise ValueError("KERNEL_PLANCKSTER_HOST, KERNEL_PLANCKSTER_PORT, KERNEL_PLANCKSTER_AUTH_TOKEN and KERNEL_PLANCKSTER_SCHEME must be set.")
-
+      
         # Setup the Kernel Planckster Gateway
         kernel_planckster = KernelPlancksterGateway(
             host=kernel_planckster_host,
@@ -72,18 +67,21 @@ def _setup_file_repository(
 def setup(
     job_id: int,
     logger: Logger,
+    kp_auth_token=str,
+    kp_host=str,
+    kp_port=int,
+    kp_scheme=str
 ) -> Tuple[KernelPlancksterGateway, ProtocolEnum, FileRepository]:
     """
     Setup the Kernel Planckster Gateway, the storage protocol and the file repository.
 
-    NOTE: needs and '.env' file within context.
     """
 
     try:
 
-        load_dotenv() 
+   
 
-        kernel_planckster = _setup_kernel_planckster(job_id, logger)
+        kernel_planckster = _setup_kernel_planckster(job_id, logger, kp_host, kp_port, kp_auth_token, kp_scheme)
 
 
         logger.info(f"{job_id}: Checking storage protocol.")
