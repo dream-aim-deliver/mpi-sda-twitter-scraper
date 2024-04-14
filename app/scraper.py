@@ -116,7 +116,7 @@ def scrape(
                     except Exception as e:
                         logger.info("could not register file")
                     last_successful_data = current_data
-                if page >= 2:
+                else:
                     logger.error(f"{job_id}: Error: {response.status_code} - {response.text}")
                     logger.info("No more tweets found for this query. Scraping completed.")
                 
