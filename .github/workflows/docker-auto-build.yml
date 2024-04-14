@@ -24,7 +24,7 @@ jobs:
                 uses: docker/metadata-action@v5
                 with:
                     images: |
-                        mpidsg/mpi-sda-twitter-scraper
+                        maany/mpi-sda-twitter-scraper
                     tags: |
                         type=semver,pattern={{version}}
             -

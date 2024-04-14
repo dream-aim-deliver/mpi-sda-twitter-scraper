@@ -1,25 +1,18 @@
-# Stage 1: Build stage
-FROM python:3.10 AS builder
+FROM python:3.10
 
-WORKDIR /scaper
+WORKDIR /app
 
-COPY . /scaper
+COPY ./requirements.txt requirements.txt
+RUN pip install -r requirements.txt
 
-RUN python3 -m venv .venv
-ENV PATH="/scaper/.venv/bin:$PATH"
-RUN pip install --upgrade pip && pip install -r requirements.txt
+COPY . /app
+RUN mkdir -p  downloaded_media/photos downloaded_media/videosFROM python:3.10
 
-# Stage 2: Run stage
-FROM python:3.10-slim
+WORKDIR /app
 
-ENV PORT=8000
+COPY ./requirements.txt requirements.txt
+RUN pip install -r requirements.txt
 
-WORKDIR /scaper
+COPY . /app
 
-COPY --from=builder /scaper /scaper
-COPY --from=builder /scaper/.venv /scaper/.venv
-
-ENV PATH="/scaper/.venv/bin:$PATH"
-
-EXPOSE ${PORT}
-CMD ["python", "server.py"]
+RUN mkdir -p  downloaded_media/photos downloaded_media/videos
