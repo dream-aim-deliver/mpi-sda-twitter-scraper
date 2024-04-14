@@ -14,7 +14,7 @@ import instructor
 from instructor import Instructor
 from openai import OpenAI
 from geopy.geocoders import Nominatim
-
+import shutil 
 class messageData(BaseModel):
     city: str
     country: str
@@ -111,10 +111,12 @@ def scrape(
                     lfp = f"{work_dir}/twitter/tweet_{page}.json"
 
                     save_tweets(new_tweets, lfp)
-                    scraped_data_repository.register_scraped_json(current_data, job_id, lfp )
-                    
+                    try:
+                        scraped_data_repository.register_scraped_json(current_data, job_id, lfp )
+                    except Exception as e:
+                        logger.info("could not register file")
                     last_successful_data = current_data
-                else:
+                if page >= 2:
                     logger.error(f"{job_id}: Error: {response.status_code} - {response.text}")
                     logger.info("No more tweets found for this query. Scraping completed.")
                 
@@ -125,8 +127,10 @@ def scrape(
                         protocol=protocol,
                         relative_path=f"twitter/{tracer_id}/{job_id}/scraped/tweet_all.json",
                     )
-                    scraped_data_repository.register_scraped_json(final_data, job_id, f"{work_dir}/twitter/tweet_all.json" )
-                    
+                    try:
+                        scraped_data_repository.register_scraped_json(final_data, job_id, f"{work_dir}/twitter/tweet_all.json" )
+                    except Exception as e:
+                        logger.info("could not register file")
                     # write augmented data to file: --> title, content, extracted_location, lattitude, longitude, month, day, year, disaster_type
 
                     df = pd.DataFrame(augmented_results, columns=["Title", "Tweet", "Extracted_Location", "Resolved_Latitude", "Resolved_Longitude", "Month", "Day", "Year", "Disaster_Type"])
@@ -137,8 +141,10 @@ def scrape(
                         protocol=protocol,
                         relative_path=f"twitter/{tracer_id}/{job_id}/augmented/data.json",
                     )
-                    scraped_data_repository.register_scraped_json(final_augmented_data, job_id, f"{work_dir}/twitter/augmented_twitter_scrape.json" )
-
+                    try:
+                        scraped_data_repository.register_scraped_json(final_augmented_data, job_id, f"{work_dir}/twitter/augmented_twitter_scrape.json" )
+                    except Exception as e:
+                        logger.info("could not register file")
                     break
             except requests.exceptions.HTTPError as e:
                 job_state = BaseJobState.FAILED
@@ -162,7 +168,7 @@ def scrape(
 
         job_state = BaseJobState.FINISHED
         logger.info(f"{job_id}: Job finished")
-
+        shutil.rmtree(work_dir)
         return JobOutput(
             job_state=job_state,
             tracer_id=str(job_id),
@@ -172,6 +178,7 @@ def scrape(
     except Exception as error:
         logger.error(f"{job_id}: Unable to scrape data. Job with tracer_id {job_id} failed. Error:\n{error}")
         job_state = BaseJobState.FAILED
+        shutil.rmtree(work_dir)
         return JobOutput(
             job_state=job_state,
             tracer_id=str(job_id),
