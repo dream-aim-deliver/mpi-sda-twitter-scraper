@@ -81,9 +81,7 @@ def setup(
 
     try:
 
-        load_dotenv(
-            dotenv_path=".env",
-        ) 
+        load_dotenv() 
 
         kernel_planckster = _setup_kernel_planckster(job_id, logger)
 
