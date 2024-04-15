@@ -169,7 +169,10 @@ def scrape(
 
         job_state = BaseJobState.FINISHED
         logger.info(f"{job_id}: Job finished")
-        shutil.rmtree(work_dir)
+        try:
+            shutil.rmtree(work_dir)
+        except Exception as e:
+            logger.log("Could not delete tmp directory, exiting")
         return JobOutput(
             job_state=job_state,
             tracer_id=str(job_id),
@@ -179,7 +182,10 @@ def scrape(
     except Exception as error:
         logger.error(f"{job_id}: Unable to scrape data. Job with tracer_id {job_id} failed. Error:\n{error}")
         job_state = BaseJobState.FAILED
-        shutil.rmtree(work_dir)
+        try:
+            shutil.rmtree(work_dir)
+        except Exception as e:
+            logger.log("Could not delete tmp directory, exiting")
         return JobOutput(
             job_state=job_state,
             tracer_id=str(job_id),
