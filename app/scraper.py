@@ -15,6 +15,9 @@ from instructor import Instructor
 from openai import OpenAI
 from geopy.geocoders import Nominatim
 import shutil 
+import uuid
+import re
+
 class messageData(BaseModel):
     city: str
     country: str
@@ -192,14 +195,29 @@ def scrape(
             source_data_list=[],
         )
 
-def save_tweets(tweets, file_path):
+def extract_username(snippet):
+    #search for username in extracted tweet
+    match = re.search(r'@\w+', snippet)
+    return match.group(0)[1:] if match else "unknown"
+
+
+
+def save_tweets(tweets, work_dir):
+    # Ensure the working directory exists
+    os.makedirs(work_dir, exist_ok=True)
     
-    os.makedirs(os.path.dirname(file_path), exist_ok=True )
-
-    with open(file_path, 'w+') as f:
-        tweet_data = [{"tweet": tweet, "tweet_number": i + 1} for i, tweet in enumerate(tweets)]
-        json.dump(tweet_data, f)
-
+    # Saving them individually
+    for i, tweet in enumerate(tweets):
+        snippet = tweet['tweet']['snippet']
+        username = extract_username(snippet)
+        timestamp = time.strftime("%Y%m%d_%H%M%S")
+        unique_id = uuid.uuid4().hex
+        filename = f"{username}_{timestamp}_{unique_id}.json"
+        file_path = os.path.join(work_dir, filename)
+        
+        # Save each tweet to a unique file
+        with open(file_path, 'w+') as f:
+            json.dump(tweet, f)
 
 def load_tweets(file_path):
     out = None
