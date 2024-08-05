@@ -8,6 +8,8 @@ import sys
 from app.sdk.models import KernelPlancksterSourceData, BaseJobState, JobOutput
 from app.sdk.scraped_data_repository import ScrapedDataRepository
 import os 
+import uuid
+import re
 from pydantic import BaseModel
 from typing import Literal
 import instructor
@@ -15,13 +17,15 @@ from instructor import Instructor
 from openai import OpenAI
 from geopy.geocoders import Nominatim
 import shutil 
+
 class messageData(BaseModel):
     city: str
     country: str
     year: int
-    month: Literal['January', 'Febuary', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+    month: Literal['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
     day: Literal['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23', '24', '25', '26', '27', '28', '29', '30', '31']
     disaster_type: Literal['Wildfire', 'Other']
+
 
 #Potential alternate prompting
 # class messageDataAlternate(BaseModel):
@@ -192,14 +196,21 @@ def scrape(
             source_data_list=[],
         )
 
-def save_tweets(tweets, file_path):
-    
-    os.makedirs(os.path.dirname(file_path), exist_ok=True )
+def save_tweets(tweets, work_dir):
+    os.makedirs(work_dir, exist_ok=True)
+    for i, tweet in enumerate(tweets):
+        snippet = tweet['tweet']['snippet']
+        username = extract_username(snippet)
+        timestamp = time.strftime("%Y%m%d_%H%M%S")
+        unique_id = uuid.uuid4().hex
+        filename = f"{username}_{timestamp}_{unique_id}.json"
+        file_path = os.path.join(work_dir, filename)
+        with open(file_path, 'w+') as f:
+            json.dump(tweet, f)
 
-    with open(file_path, 'w+') as f:
-        tweet_data = [{"tweet": tweet, "tweet_number": i + 1} for i, tweet in enumerate(tweets)]
-        json.dump(tweet_data, f)
-
+def extract_username(snippet):
+    match = re.search(r'@\w+', snippet)
+    return match.group(0)[1:] if match else "unknown"
 
 def load_tweets(file_path):
     out = None
