@@ -80,6 +80,9 @@ def scrape(
         augmented_results = []
         page = 1
         tweet_count = 0
+
+        timestamp = time.strftime("%Y%m%d_%H%M%S")
+
         while True:
             payload = {
                 'api_key': scraper_api_key,
@@ -93,6 +96,7 @@ def scrape(
                 response = requests.get('https://api.scraperapi.com/structured/twitter/search', params=payload)
                 response.raise_for_status()
                 data = response.json()
+                
                 if 'organic_results' in data:
                     new_tweets = data['organic_results']
                     results.extend(new_tweets)
@@ -106,14 +110,14 @@ def scrape(
                     
                     tweet_count += len(new_tweets)
                     logger.info(f"{job_id}: Fetched {tweet_count} tweets so far...")
-                    
+                   
                     current_data = KernelPlancksterSourceData(
                         name=f"tweet_{page}",
                         protocol=protocol,
-                        relative_path=f"twitter/{tracer_id}/{job_id}/scraped/tweet_{page}.json",
+                        relative_path=f"twitter/{tracer_id}/{job_id}/scraped/tweet_{timestamp}_{page}.json",
                     )
                     output_data_list.append(current_data)
-                    lfp = f"{work_dir}/twitter/tweet_{page}.json"
+                    lfp = f"{work_dir}/twitter/tweet_{timestamp}_{page}.json"
 
                     save_tweets(new_tweets, lfp)
                     try:
@@ -125,29 +129,29 @@ def scrape(
                     logger.error(f"{job_id}: Error: {response.status_code} - {response.text}")
                     logger.info("No more tweets found for this query. Scraping completed.")
                 
-                    save_tweets(results, f"{work_dir}/twitter/tweet_all.json")
+                    save_tweets(results, f"{work_dir}/twitter/tweet_all_{timestamp}.json")
                     
                     final_data = KernelPlancksterSourceData(
                         name=f"tweet_all",
                         protocol=protocol,
-                        relative_path=f"twitter/{tracer_id}/{job_id}/scraped/tweet_all.json",
+                        relative_path=f"twitter/{tracer_id}/{job_id}/scraped/tweet_all_{timestamp}.json",
                     )
                     try:
-                        scraped_data_repository.register_scraped_json(final_data, job_id, f"{work_dir}/twitter/tweet_all.json" )
+                        scraped_data_repository.register_scraped_json(final_data, job_id, f"{work_dir}/twitter/tweet_all_{timestamp}.json" )
                     except Exception as e:
                         logger.info("could not register file")
                     # write augmented data to file: --> title, content, extracted_location, lattitude, longitude, month, day, year, disaster_type
 
                     df = pd.DataFrame(augmented_results, columns=["Title", "Tweet", "Extracted_Location", "Resolved_Latitude", "Resolved_Longitude", "Month", "Day", "Year", "Disaster_Type"])
-                    df.to_json(f"{work_dir}/twitter/augmented_twitter_scrape.json", orient='index', indent=4)
+                    df.to_json(f"{work_dir}/twitter/augmented_twitter_scrape_{timestamp}.json", orient='index', indent=4)
 
                     final_augmented_data = KernelPlancksterSourceData(
                         name=f"tweet_all_augmented",
                         protocol=protocol,
-                        relative_path=f"twitter/{tracer_id}/{job_id}/augmented/data.json",
+                        relative_path=f"twitter/{tracer_id}/{job_id}/augmented/data_{timestamp}.json",
                     )
                     try:
-                        scraped_data_repository.register_scraped_json(final_augmented_data, job_id, f"{work_dir}/twitter/augmented_twitter_scrape.json" )
+                        scraped_data_repository.register_scraped_json(final_augmented_data, job_id, f"{work_dir}/twitter/augmented_twitter_scrape_{timestamp}.json" )
                     except Exception as e:
                         logger.info("could not register file")
                     break
@@ -196,21 +200,11 @@ def scrape(
             source_data_list=[],
         )
 
-def save_tweets(tweets, work_dir):
-    os.makedirs(work_dir, exist_ok=True)
-    for i, tweet in enumerate(tweets):
-        snippet = tweet['tweet']['snippet']
-        username = extract_username(snippet)
-        timestamp = time.strftime("%Y%m%d_%H%M%S")
-        unique_id = uuid.uuid4().hex
-        filename = f"{username}_{timestamp}_{unique_id}.json"
-        file_path = os.path.join(work_dir, filename)
-        with open(file_path, 'w+') as f:
-            json.dump(tweet, f)
-
-def extract_username(snippet):
-    match = re.search(r'@\w+', snippet)
-    return match.group(0)[1:] if match else "unknown"
+def save_tweets(tweets, file_path):
+    os.makedirs(os.path.dirname(file_path), exist_ok=True )
+    with open(file_path, 'w+') as f:
+        tweet_data = [{"tweet": tweet, "tweet_number": i + 1} for i, tweet in enumerate(tweets)]
+        json.dump(tweet_data, f)
 
 def load_tweets(file_path):
     out = None
